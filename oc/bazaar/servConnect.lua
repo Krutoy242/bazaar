@@ -29,3 +29,5 @@ local function issue(queryArray)
   
   return errorString
 end
+
+return {getLocalStorage=getLocalStorage, getSellOrders=getSellOrders, getBuyOrders=getBuyOrders,transfer=transfer,issue=issue}
