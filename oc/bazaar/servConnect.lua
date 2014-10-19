@@ -4,6 +4,16 @@ local function getLocalStorage()
   return {}
 end
 
+local function getSellOrders()
+
+  return {}
+end
+
+local function getBuyOrders()
+
+  return {}
+end
+
 -- Команда перемещения предметов между пользователями
 -- queryArray = { {bunchID, count}, [...] }
 -- bunchID - идентификатор кучки предметов в таблице
@@ -15,7 +25,7 @@ local function transfer(queryArray, player)
 end
 
 -- Команда выдачи из локального хранилища в сундук терминала
-local issue(queryArray)
+local function issue(queryArray)
   
   return errorString
 end
