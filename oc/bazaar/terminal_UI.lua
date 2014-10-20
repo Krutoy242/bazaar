@@ -185,7 +185,7 @@ local function buyDialog(id, price, count)
   -- Пользователь что то пишет. Сразу считать сумму
   buy_count:addHandler("key_down", function(event,addy,char,key)
     newCount = tonumber(buy_count.text)
-    numCount = (numCount > count ? count : numCount)
+    numCount = ((umCount > count) ? count : numCount)
     total = price*newCount
     buy_total.text = parseCommas(total)
     buy_total:draw()
