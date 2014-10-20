@@ -1,4 +1,23 @@
---just hrere to force reloading the api so I don't have to reboot
+-- ********************************************************************************** --
+-- **                                                                              ** --
+-- **   Базар                     Создатели: Krutoy, Totoro, Semoro                ** --
+-- **                                                                              ** --
+-- **   Специально для захвата сервера     http://computercraft.ru/                ** --
+-- **                                                                              ** --
+-- **   https://github.com/Krutoy242/bazaar                                        ** --
+-- **                                                                              ** --
+-- ********************************************************************************** --
+
+--[[
+ ,+---+
++---+'|
+|^_^| +
++---+'
+]]
+
+--===========================================================
+-- Globals
+--===========================================================
 package.loaded.gml=nil
 package.loaded.gfxbuffer=nil
 package.loaded.canvas=nil
@@ -11,40 +30,43 @@ local gfxbuffer   = require("gfxbuffer")
 local servConnect = require("servConnect")
 
 
---------------------------------------------------
--- Утилиты
---------------------------------------------------
-
--- Запрос хранилища
-local function pollStorage(query)
-  --TODO: Опрос хранилища
-  
-  if(query.name == "list") then
-    --local returnValue = cntr.getItems()
-    --return returnValue
-    return {["blabla"]={qty=100},["ololol"]={qty=12200}}
-  elseif(query.name == "issue") then
-    return true
-  end
-  
-  return nil
-end
+-- ********************************************************************************** --
+-- **                                                                              ** --
+-- **                                Utilities                                     ** --
+-- **                                                                              ** --
+-- ********************************************************************************** --
 
 -- Получает информацию из банка
 local function pollBank(query, playerName)
   --TODO: Работа с сервером воздуха
   
   if(query == "bill") then
-    return 1000000.01
+    return math.random()*1000000000.01
   end
   
   return nil
 end
 
--- 
-local function parseCommas(n)
+-- Добавляет запятые к большим числам
+local function parseCommas(num)
   --TODO: Правильно парсить цифры
-  return n
+  local n, m = math.modf(num)
+  local str  = "."..math.floor(m*100)
+  if m==0 then str=str.."0"
+  
+  if n> 0 then 
+    str = n%1000 .. str
+    n = math.floor(n/1000)
+  else
+    str = "0"..str
+  end
+  
+  while n>=1
+    str = n%1000 ..",".. str
+    n = math.floor(n/1000)
+  end
+ 
+  return str
 end
 
 -- Выдает обработанное число денег
@@ -53,16 +75,26 @@ local function getAirCount()
   return parseCommas(rawAirCount)
 end
 
---------------------------------------------------
--- Гуи
---------------------------------------------------
+-- ********************************************************************************** --
+-- **                                                                              ** --
+-- **                                UI                                            ** --
+-- **                                                                              ** --
+-- ********************************************************************************** --
 
+
+--===========================
+-- Главное меню
+--===========================
 local uiW, uiH = 90, 40
 local searchInputLen = 12
 local sellProportion = 0.7
 local sellersLength  = math.ceil((uiH-14)*   sellProportion)
 local buyersLength   = math.floor((uiH-14)*(1-sellProportion))
 local gpu = component.gpu
+local gui=gml.create(1,1,uiW,uiH)
+gpu.setResolution(uiW, uiH)
+gui.style = gml.loadStyle("ui_styles")
+
 
 local function drawBackground()
   local ln -- Текущая рабочая строка
@@ -84,15 +116,10 @@ local function drawBackground()
   ln=ln+1+buyersLength
   gpu.set(1,ln,"╚"); gpu.fill(1,ln,uiW,1, "═"); gpu.set(uiW,ln, "╝")
 end
+gui.onRun = function() drawBackground() end
 
-gpu.setResolution(uiW, uiH)
 
-local gui=gml.create(1,1,uiW,uiH)
-gui.style = gml.loadStyle("ui_styles")
 
---===========================
--- Главное меню
---===========================
 
 local ln -- Текущая рабочая строка
 
@@ -123,25 +150,77 @@ local buyersList=gui:addListBox(1,ln,uiW-1,buyersLength,parsedTable)
 --===========================
 -- Диалог покупок
 --===========================
+local buyW, buyH = 30, 12
+local buy_wnd = gml.create("center", "center", buyW, buyH)
+buy_wnd.style = gui.style
+buy_wnd.class = "dialog"
 
+local buy_id    = buy_wnd:addLabel    (10,1,buyW-10, "0")
+local buy_price = buy_wnd:addLabel    (10,2,buyW-10, "0")
+local buy_count = buy_wnd:addTextField(10,3,buyW-10)
+local buy_total = buy_wnd:addLabel    (10,5,buyW-10, "0")
+buy_total["text-color"] = 0xff1122
 
---===========================
--- Действия
---===========================
+local buy_no = buy_wnd:addButton(buyW-16,"bottom",10,1,"ОТМЕНА",toggleLabel)
+local buy_ok = buy_wnd:addButton("right","bottom",10,1,"КУПИТЬ",toggleLabel)
+
+local function buy_drawBackground()
+  gpu.set(buy_wnd.posX+1,buy_wnd.posY+1,"ID")
+  gpu.set(buy_wnd.posX+1,buy_wnd.posY+2,"Цена:")
+  gpu.set(buy_wnd.posX+1,buy_wnd.posY+3,"Кол-во:")
+  gpu.set(buy_wnd.posX+1,buy_wnd.posY+5,"Всего:")
+end
+buy_wnd.onRun = function() buy_drawBackground() end
+
+-- Показывает диалог и возвращает количество купленных предметов
+local function buyDialog(id, price, count)
+  local newCount = count
+  local total = price*newCount
+  
+  buy_id.text    = id   ..""
+  buy_price.text = parseCommas(price)
+  buy_count.text = count..""
+  buy_total.text = total .. ""
+  
+  -- Пользователь что то пишет. Сразу считать сумму
+  buy_count:addHandler("key_down", function(event,addy,char,key)
+    newCount = tonumber(buy_count.text)
+    numCount = (numCount > count ? count : numCount)
+    total = price*newCount
+    buy_total.text = parseCommas(total)
+    buy_total:draw()
+  end)
+  
+  buy_no.onClick = function()
+    buy_wnd.close()
+    return 0
+  end
+  buy_no.onClick = function()
+    buy_wnd.close()
+    return newCount
+  end
+  
+  buy_wnd:run()
+  
+  return 0
+end
 
 -- Нажали - купили
 sellersList.onClick = function()
   local index = sellersList:getSelected()
   
-  local answer = pollStorage({name="issue", id=1, count=12})
-  if answer ~= true then
-    --TODO: Ошибка
-  end
+  local buyedCunt = buyDialog(1, 299.99, 100)
+  local total = buyedCunt*100
+  
+  -- TODO: Снятие денег
+  -- TODO: Обновление денег
+  -- TODO: Обновление товара
+  
+  
 end
 
 airCount.onClick = function()
   gui.close()
 end
 
-gui.onRun = function() drawBackground() end
 gui:run()
