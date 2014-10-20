@@ -61,7 +61,7 @@ local function parseCommas(num)
     str = "0"..str
   end
   
-  while n>=1
+  while n>=1 do
     str = n%1000 ..",".. str
     n = math.floor(n/1000)
   end
