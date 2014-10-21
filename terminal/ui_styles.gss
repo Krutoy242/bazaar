@@ -1,0 +1,68 @@
+* {
+  fill-ch: " ";
+  fill-color-fg: 0x0093eb;
+  fill-color-bg: 0x010c12;
+  
+  text-color:0xffffff;
+  text-background: 0x151616;
+
+  border: false;
+  border-top: false;
+  border-bottom: false;
+  border-left: false;
+  border-right: false;
+  
+  border-color-fg: 0xffffff;
+  border-color-bg: 0xb4b4b4; 
+  border-ch-top: U+2550;
+  border-ch-bottom: U+2550;
+  border-ch-left: U+2551;
+  border-ch-right: U+2551;
+  border-ch-topleft: U+2554;
+  border-ch-bottomleft: U+255a;
+  border-ch-topright: U+2557;
+  border-ch-bottomright: U+255d; 
+}
+
+label {
+  text-background: 0x010c12
+}
+
+textfield, textbox {
+  selected-color: 0xedfffe;
+  selected-background: 0x0c1e34;
+  text-color: 0xedfffe;
+  text-background: 0x3a3a3a;  
+}
+
+
+textbox:focus, textfield:focus {
+  text-color: 0xedfffe;
+  text-background: 0x0a0e11;
+  fill-color-fg: 0xedfffe;
+  fill-color-bg: 0x0a0e11;
+}
+
+listbox {
+  text-background: 0x020305;
+}
+
+label.listbox:selected {
+  text-background: 0x04090f;
+}
+
+scrollbar {
+  button-color-fg: 0x0b426b;
+  button-color-bg: 0x062843;
+  button-ch-up: U+25b2;
+  button-ch-down: U+25bc;
+  button-ch-left: U+25c4;
+  button-ch-right: U+25ba;
+  grip-ch-v: " ";
+  grip-ch-h: "|";
+  bar-ch: " ";
+  bar-color-fg: 0xffffff;
+  bar-color-bg: 0x031f35;
+  grip-color-fg: 0xffffff;
+  grip-color-bg: 0x0b426b;
+}

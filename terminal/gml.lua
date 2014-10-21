@@ -25,8 +25,6 @@ local keyboard=require("keyboard")
 local unicode=require("unicode")
 local gfxbuffer=require("gfxbuffer")
 
-shell.running=require("process").running
-
 local doubleClickThreshold=.25
 
 local gml={VERSION="1.0"}
