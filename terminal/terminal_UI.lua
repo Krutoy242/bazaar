@@ -24,10 +24,17 @@ package.loaded.canvas=nil
 package.loaded.servConnect=nil
 
 local gml      = require("gml")
+local event    = require("event")
 local component= require("component")
 local canvas   = require("canvas")
 local gfxbuffer   = require("gfxbuffer")
 local servConnect = require("servConnect")
+
+--===========================================================
+-- Locals
+--===========================================================
+local currentUser = ""
+local gpu = component.gpu
 
 
 -- ********************************************************************************** --
@@ -52,7 +59,7 @@ local function parseCommas(num)
   --TODO: Правильно парсить цифры
   local n, m = math.modf(num)
   local str  = "."..math.floor(m*100)
-  if m==0 then str=str.."0"
+  if m==0 then str=str.."0" end
   
   if n> 0 then 
     str = n%1000 .. str
@@ -81,6 +88,15 @@ end
 -- **                                                                              ** --
 -- ********************************************************************************** --
 
+--===========================
+-- Режим ожидания
+--===========================
+local idlW, idlH = 4, 1
+
+local function showIdle()
+  gpu.setResolution(idlW, idlH)
+  gpu.set (1,1,"ЖДЕМ")
+end
 
 --===========================
 -- Главное меню
@@ -90,10 +106,8 @@ local searchInputLen = 12
 local sellProportion = 0.7
 local sellersLength  = math.ceil((uiH-14)*   sellProportion)
 local buyersLength   = math.floor((uiH-14)*(1-sellProportion))
-local gpu = component.gpu
-local gui=gml.create(1,1,uiW,uiH)
-gpu.setResolution(uiW, uiH)
-gui.style = gml.loadStyle("ui_styles")
+local main_wnd=gml.create(1,1,uiW,uiH)
+main_wnd.style = gml.loadStyle("style")
 
 
 local function drawBackground()
@@ -116,19 +130,20 @@ local function drawBackground()
   ln=ln+1+buyersLength
   gpu.set(1,ln,"╚"); gpu.fill(1,ln,uiW,1, "═"); gpu.set(uiW,ln, "╝")
 end
-gui.onRun = function() drawBackground() end
-
-
+main_wnd.onRun = function()
+  gpu.setResolution(uiW, uiH)
+  drawBackground()
+end
 
 
 local ln -- Текущая рабочая строка
 
 -- Информация по воздуху
-ln= 2; local airCount = gui:addLabel(10,ln,30, getAirCount() .. "")
+ln= 2; local airCount = main_wnd:addLabel(10,ln,30, getAirCount() .. "")
 airCount["text-color"] = 0x22ff12
 
 -- Поиск
-ln= 4; local searchInput = gui:addTextField(uiW-searchInputLen-1,ln,searchInputLen)
+ln= 4; local searchInput = main_wnd:addTextField(uiW-searchInputLen-1,ln,searchInputLen)
 
 -- Список продаж
 local sellOrders = servConnect.getSellOrders()
@@ -136,7 +151,7 @@ local parsedTable = {}
 for k,v in pairs(sellOrders) do
   table.insert(parsedTable, "["..k .. "] -  " .. v.qty)
 end
-ln= 7; local sellersList=gui:addListBox(1,ln,uiW-1,sellersLength,parsedTable)
+ln= 7; local sellersList=main_wnd:addListBox(1,ln,uiW-1,sellersLength,parsedTable)
 
 -- Список покупок
 local buyOrders = servConnect.getBuyOrders()
@@ -145,14 +160,14 @@ for k,v in pairs(buyOrders) do
   table.insert(parsedTable, "["..k .. "] -  " .. v.qty)
 end
 ln= 9+sellersLength+3
-local buyersList=gui:addListBox(1,ln,uiW-1,buyersLength,parsedTable)
+local buyersList=main_wnd:addListBox(1,ln,uiW-1,buyersLength,parsedTable)
 
 --===========================
 -- Диалог покупок
 --===========================
-local buyW, buyH = 30, 12
+local buyW, buyH = 40, 10
 local buy_wnd = gml.create("center", "center", buyW, buyH)
-buy_wnd.style = gui.style
+buy_wnd.style = main_wnd.style
 buy_wnd.class = "dialog"
 
 local buy_id    = buy_wnd:addLabel    (10,1,buyW-10, "0")
@@ -161,7 +176,7 @@ local buy_count = buy_wnd:addTextField(10,3,buyW-10)
 local buy_total = buy_wnd:addLabel    (10,5,buyW-10, "0")
 buy_total["text-color"] = 0xff1122
 
-local buy_no = buy_wnd:addButton(buyW-16,"bottom",10,1,"ОТМЕНА",toggleLabel)
+local buy_no = buy_wnd:addButton(buyW-22,"bottom",10,1,"ОТМЕНА",toggleLabel)
 local buy_ok = buy_wnd:addButton("right","bottom",10,1,"КУПИТЬ",toggleLabel)
 
 local function buy_drawBackground()
@@ -183,7 +198,7 @@ local function buyDialog(id, price, count)
   buy_total.text = total .. ""
   
   -- Пользователь что то пишет. Сразу считать сумму
-  buy_count:addHandler("key_down", function(event,addy,char,key)
+  main_wnd:addHandler("key_down", function(event,addy,char,key)
     newCount = tonumber(buy_count.text)
     numCount = ((umCount > count) and count or numCount)
     total = price*newCount
@@ -205,8 +220,42 @@ local function buyDialog(id, price, count)
   return 0
 end
 
+--===========================
+-- Главное
+--===========================
+
+local function sensorListener(_,_,mx,my,mz,name)
+  if not isMob(name) then
+    if math.sqrt(mx*mx + my*my + mz*mz) > 3.0 then
+      main_wnd.close()
+      showIdle()
+    else
+      if currentUser ~= name then
+        currentUser = name
+        main_wnd:run()
+      end
+    end
+  end
+end
+event.listen("motion", sensorListener)
+
+local mobs = {"Spider", "Zombie", "Creeper", "Skeleton", "Enderman", "Sheep", "Cow", "Chicken", "Bat"}
+local function isMob(name)
+  for i=1, #mobs do
+    if name == mobs[i] then return true end
+  end
+  return false
+end
+
+
+-- Какой то обработчик, без которого не воркает
+main_wnd:addHandler("key_down",
+  function(event,addy,char,key)
+  
+  end)
+
 -- Нажали - купили
-sellersList.onClick = function()
+sellersList.onDoubleClick = function()
   local index = sellersList:getSelected()
   
   local buyedCunt = buyDialog(1, 299.99, 100)
@@ -220,7 +269,7 @@ sellersList.onClick = function()
 end
 
 airCount.onClick = function()
-  gui.close()
+  main_wnd.close()
 end
 
-gui:run()
+showIdle()
