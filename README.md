@@ -8,7 +8,7 @@
 * Поиск по ID
 * Личное хранилище
 
-![Концепт интерфейса базара](http://i.imgur.com/ZQtS48m.png)
+![Интерфейс базара](http://i.imgur.com/7c9mvzG.png)
 
 ***
 
@@ -29,12 +29,10 @@
 ![Пример интерфейса EVE-Online](http://media-titanium.cursecdn.com/attachments/53/450/market2.jpg)
 
 ***
-### Пример физической структуры рынка
+### Пример физической структуры базара
 ![Блок-схема рынка](http://i.imgur.com/vQeWL6h.png)
 
 
 ***
-### Текущий прогресс рынка и интерфейса
-
+### Текущий прогресс базара
 ![Скриншот рынка на сервере](http://i.imgur.com/xFvEDmK.jpg)
-![Скриншот интерфейса](http://i.imgur.com/rLrfIwU.png)
