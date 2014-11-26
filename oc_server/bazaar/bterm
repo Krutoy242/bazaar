@@ -1,0 +1,100 @@
+--just hrere to force reloading the api so I don't have to reboot
+package.loaded.gml=nil
+package.loaded.gfxbuffer=nil
+package.loaded.counter=nil
+
+local gml=require("gml")
+local component=require("component")
+local cntr = require("itemManager")
+
+--------------------------------------------------
+-- Утилиты
+--------------------------------------------------
+
+-- Запрос хранилища
+local function pollStorage(query)
+  --TODO: Опрос хранилища
+  
+  if(query.name == "list") then
+    local returnValue = cntr.getItems()
+    return returnValue
+  elseif(query.name == "issue") then
+    return true
+  end
+  
+  return nil
+end
+
+-- Получает информацию из банка
+local function pollBank(query, playerName)
+  --TODO: Работа с сервером воздуха
+  
+  if(query == "bill") then
+    return 1000000.01
+  end
+  
+  return nil
+end
+
+-- 
+local function parseCommas(n)
+  --TODO: Правильно парсить цифры
+  return n
+end
+
+-- Выдает обработанное число денег
+local function getAirCount()
+  local rawAirCount = pollBank("bill", "PlayerName")
+  return parseCommas(rawAirCount)
+end
+
+local gui=gml.create(0,0,100,50)
+
+local function mainMenuNavigate(n)
+  local functions = {
+  function() 
+  
+  end,function() 
+  
+  end,function()  
+ 
+  end,function() 
+    gui:close()
+  end
+  }
+  functions[n]()
+  
+end 
+
+-- Главное меню
+local menuItems = {"Главная", "Детали", "Заказы", "Выход"}
+local bw,bh = 18, 3
+for k=1,#menuItems do
+  gui:addButton(1+(k-1)*(bw+2),1,bw,3,menuItems[k], function() mainMenuNavigate(k) end)
+end
+
+-- Информация по воздуху
+local airCount = gui:addLabel(0,30,13,"Воздуха: "..getAirCount())
+
+-- Разделители
+local separator = gui:addLabel(0,6,50,"Продажи:")
+
+-- Список предметов
+local itemsTable = pollStorage({name="list"})
+local parsedTable = {}
+for k,v in pairs(itemsTable) do
+  table.insert(parsedTable, v.name .. "  [" ..  k .. "] -  " .. v.qty)
+end
+local listBox=gui:addListBox(0,10,90,30,parsedTable)
+
+-- Нажали - купили
+listBox.onClick = function()
+  local index = listBox:getSelected()
+  
+  local answer = pollStorage({name="issue", id=1, count=12})
+  if answer ~= true then
+    --TODO: Ошибка
+  end
+end
+
+gui:run()
